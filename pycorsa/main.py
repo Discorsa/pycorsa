@@ -1,5 +1,5 @@
 import ac; import acsys
-import typing; from typing import Optional, Literal, Callable, TypedDict, Dict
+import typing; from typing import Optional, Literal, Callable, TypedDict, Dict, Type
 import threading; import logging
 
 class a_3D_object():
@@ -26,6 +26,7 @@ class car():
     def __init__(self, car_id: int) -> None:
         self.car_id = car_id
         self.state = self.state(self.car_id)
+        self.camera = self.camera(self.car_id)
 
     class state():
         def __init__(self, car_id) -> None:
@@ -229,10 +230,6 @@ class car():
             _val = self._getCarState('WorldPosition')
             val = a_3D_object(x=_val[0], y=_val[1], z=_val[2])
             return val
-
-        """
-        Some 4D objects are related to each tire. So in these cases:  X, Y, Z, W  correspond to  FL, FR, RL, RR  respectively
-        """
 
         @property
         def camber_rad(self):
@@ -493,6 +490,42 @@ class car():
             raise Exception('Setting car FFB is only allowed for the current players car (id should be 0)')
         ac.setCarFFB(value_to_add)
         return self.ffb_gain
+    
+    class camera():
+        def __init__(self, car_id) -> None:
+            self.car_id = car_id
+    
+        @property
+        def is_camera_on_board(self):
+            val = ac.isCameraOnBoard(self.car_id)
+            if val == 1:
+                return True
+            if val == -1:
+                return False
+        
+        @property
+        def camera_car_count(self):
+            val = ac.getCameraCarCount(self.car_id)
+            if val == -1:
+                logging.error(f'Couldnt get camera car count for car ID: {self.car_id}')
+                return None
+            return val
+        
+        def set_camera_car(self, camera_id: int):
+            val = ac.setCameraCar(camera_id, self.car_id)
+            if val == 1:
+                return True
+            if val == -1:
+                return False
+        
+        def focus_car(self):
+            val = ac.focusCar(self.car_id)
+            if val == 1:
+                return True
+            if val == -1:
+                return False
+    
+
 
 
 class window_management():
@@ -525,3 +558,6 @@ class window_management():
         def updateOnClickedListener(self, eventListener: Callable):
             ac.addOnClickedListener(self.control_identifier, eventListener)
 
+class pycorsa():
+    def __init__(self, sim_info = None) -> None:
+        self.sim_info = sim_info
